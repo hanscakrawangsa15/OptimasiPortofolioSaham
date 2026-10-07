@@ -19,6 +19,7 @@ import visualisasi as vz  # noqa: E402
 from baseline import equal_weight, max_sharpe_slsqp  # noqa: E402
 from GeneticAlgorithm import pilih_median, pilih_terbaik, run_ga_batch  # noqa: E402
 from portofolio import sharpe_ratio  # noqa: E402
+from scrappingdata import hitung_mu_cov, pisah_latih_uji  # noqa: E402
 
 
 def jalankan(data_dir=config.DATA_DIR, hasil_dir=config.HASIL_DIR,
@@ -27,12 +28,11 @@ def jalankan(data_dir=config.DATA_DIR, hasil_dir=config.HASIL_DIR,
     os.makedirs(hasil_dir, exist_ok=True)
     rets = pd.read_csv(os.path.join(data_dir, "log_return.csv"),
                        index_col=0, parse_dates=True)
-    z = np.load(os.path.join(data_dir, "mu_cov_train.npz"), allow_pickle=True)
-    mu, cov, tickers = z["mu"], z["cov"], list(z["tickers"])
-    rets = rets[tickers]
-    test = rets.loc[rets.index > pd.Timestamp(train_end)]
-    if test.empty:
-        raise ValueError("Data uji kosong; periksa TRAIN_END dan data/")
+    tickers = list(rets.columns)
+    # mu/Sigma dihitung ulang dari data latih sesuai train_end (bukan dari
+    # mu_cov_train.npz) supaya data uji tidak bocor bila TRAIN_END diubah.
+    train, test = pisah_latih_uji(rets, train_end)
+    mu, cov = hitung_mu_cov(train)
     cap, rf = config.MAX_WEIGHT, config.RISK_FREE
 
     # Tahap 6 (lebih dulu): baseline
@@ -49,6 +49,8 @@ def jalankan(data_dir=config.DATA_DIR, hasil_dir=config.HASIL_DIR,
     fit = np.array([r.fitness for r in results])
     print(f"GA latih ({n_runs} run): terbaik={fit.max():.3f} "
           f"median={np.median(fit):.3f} std={fit.std():.4f}")
+    if fit.max() <= s_qp + 1e-6:
+        print("Catatan: GA mencapai optimum SLSQP di data latih, tidak melampauinya.")
 
     # Tahap 7: evaluasi data uji
     bobot = {"GA-terbaik": best.weights, "GA-median": med.weights,
@@ -56,12 +58,23 @@ def jalankan(data_dir=config.DATA_DIR, hasil_dir=config.HASIL_DIR,
     tabel = ev.bandingkan(test, bobot, rf)
     print("\nMetrik data uji:\n", tabel.round(4))
 
+    sharpe_uji = np.array([ev.hitung_metrik(test, r.weights, rf)["sharpe"]
+                           for r in results])
+    ringkasan = {"sharpe_uji_ga_mean": float(sharpe_uji.mean()),
+                 "sharpe_uji_ga_std": float(sharpe_uji.std(ddof=1)) if n_runs > 1 else 0.0,
+                 "sharpe_latih_ga_terbaik": float(fit.max()),
+                 "sharpe_latih_slsqp": float(s_qp)}
+    print(f"Sebaran Sharpe uji GA ({n_runs} run): "
+          f"{ringkasan['sharpe_uji_ga_mean']:.3f} +/- {ringkasan['sharpe_uji_ga_std']:.3f} "
+          f"(rentang {sharpe_uji.min():.3f}..{sharpe_uji.max():.3f}). Selisih GA vs "
+          f"SLSQP di bawah sebaran antar-run tidak bermakna; data uji hanya satu lintasan.")
+
     pd.DataFrame(bobot, index=tickers).to_csv(os.path.join(hasil_dir, "bobot.csv"))
     tabel.to_csv(os.path.join(hasil_dir, "metrik_uji.csv"))
     pd.DataFrame({
         "seed": [r.seed for r in results],
         "sharpe_latih": fit,
-        "sharpe_uji": [ev.hitung_metrik(test, r.weights, rf)["sharpe"] for r in results],
+        "sharpe_uji": sharpe_uji,
     }).to_csv(os.path.join(hasil_dir, "ga_semua_run.csv"), index=False)
 
     # Tahap 8: enam visual
@@ -77,7 +90,8 @@ def jalankan(data_dir=config.DATA_DIR, hasil_dir=config.HASIL_DIR,
     vz.plot_drawdown({n: ev.drawdown_series(s) for n, s in kum.items()},
                      p("6_drawdown.png"))
     print(f"\nHasil tersimpan di {hasil_dir}")
-    return {"tabel": tabel, "bobot": bobot, "ga_results": results}
+    return {"tabel": tabel, "bobot": bobot, "ga_results": results,
+            "mu": mu, "cov": cov, "ringkasan": ringkasan}
 
 
 def main():

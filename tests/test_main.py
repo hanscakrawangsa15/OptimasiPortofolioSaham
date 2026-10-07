@@ -31,3 +31,26 @@ def test_pipeline_end_to_end(tmp_path):
               "1_konvergensi.png", "2_sebaran_sharpe.png", "3_bobot.png",
               "4_kumulatif.png", "5_metrik.png", "6_drawdown.png"]:
         assert os.path.getsize(os.path.join(hasil, f)) > 0
+
+
+def test_mu_cov_dihitung_dari_train_end_bukan_dari_npz(tmp_path):
+    # npz dibuat untuk train=300, tetapi train_end yang diminta hanya 250 hari:
+    # mu/cov harus mengikuti train_end (tanpa kebocoran data uji).
+    data, hasil, _ = _siapkan(tmp_path, train=300)
+    rets = pd.read_csv(os.path.join(data, "log_return.csv"), index_col=0, parse_dates=True)
+    train_end = str(rets.index[249].date())
+    out = m.jalankan(data, hasil, n_runs=2, pop_size=20, generations=3,
+                     train_end=train_end)
+    assert np.allclose(out["mu"], rets.iloc[:250].mean().values * 252)
+    assert np.allclose(out["cov"], rets.iloc[:250].cov().values * 252)
+
+
+def test_ringkasan_sebaran_sharpe_uji(tmp_path, capsys):
+    data, hasil, train_end = _siapkan(tmp_path)
+    out = m.jalankan(data, hasil, n_runs=4, pop_size=20, generations=3,
+                     train_end=train_end)
+    r = out["ringkasan"]
+    assert set(r) >= {"sharpe_uji_ga_mean", "sharpe_uji_ga_std",
+                      "sharpe_latih_ga_terbaik", "sharpe_latih_slsqp"}
+    assert np.isfinite(r["sharpe_uji_ga_std"])
+    assert "Sebaran Sharpe uji GA" in capsys.readouterr().out
