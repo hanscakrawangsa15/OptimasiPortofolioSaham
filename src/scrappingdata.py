@@ -1,41 +1,33 @@
+"""Menyiapkan data untuk GA alokasi portofolio LQ45.
+
+Jalankan dari root proyek:  python3 src/scrappingdata.py
+Keluaran di data/: harga_adjclose.csv, log_return.csv, mu_cov_train.npz
 """
-Menyiapkan data untuk GA alokasi portofolio.
-Jalankan di komputermu sendiri:
-    pip install yfinance pandas numpy
-    python siapkan_data_portofolio.py
-Output: harga_adjclose.csv, log_return.csv, mu_cov_train.npz
-"""
+import math
+import os
+import sys
+
 import numpy as np
 import pandas as pd
-import yfinance as yf
 
-# ---- Pengaturan ----
-TICKERS = [
-    "BBCA.JK", "BBRI.JK", "BMRI.JK", "BBNI.JK", "ISAT.JK",
-    "INDF.JK", "JPFA.JK", "INKP.JK", "INCO.JK", "ADRO.JK",
-]
-START = "2021-10-01"
-END = "2026-10-01"
-TRAIN_END = "2025-09-30"   # data latih: START..TRAIN_END, data uji: sesudahnya
-TRADING_DAYS = 252
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import config  # noqa: E402
 
 
 def unduh_harga(tickers, start, end):
-    """Unduh adjusted close, cek kualitas, dan bersihkan."""
+    import yfinance as yf
     raw = yf.download(tickers, start=start, end=end,
                       auto_adjust=True, progress=False)
-    prices = raw["Close"].copy()
+    return raw["Close"].copy()
 
-    print("Jumlah baris:", len(prices))
-    print("Data kosong per ticker:\n", prices.isna().sum(), "\n")
 
-    dead = prices.columns[prices.isna().mean() > 0.10]
-    if len(dead):
-        print("PERINGATAN: data banyak kosong, pertimbangkan ganti ticker:",
-              list(dead))
-        prices = prices.drop(columns=dead)
-
-    return prices.ffill(limit=3).dropna()
+def bersihkan_harga(prices, max_missing):
+    """Buang ticker dengan data kosong > max_missing SEBELUM dropna(),
+    supaya satu ticker IPO belakangan tidak memangkas seluruh tanggal."""
+    kosong = prices.isna().mean()
+    dibuang = [c for c in prices.columns if kosong[c] > max_missing]
+    bersih = prices.drop(columns=dibuang).ffill(limit=3).dropna()
+    return bersih, dibuang
 
 
 def hitung_log_return(prices):
@@ -43,38 +35,43 @@ def hitung_log_return(prices):
 
 
 def pisah_latih_uji(rets, train_end):
-    train = rets.loc[:train_end]
-    test = rets.loc[train_end:].iloc[1:]
+    train = rets.loc[rets.index <= pd.Timestamp(train_end)]
+    test = rets.loc[rets.index > pd.Timestamp(train_end)]
+    if len(train) == 0 or len(test) == 0:
+        raise ValueError(
+            f"Data latih ({len(train)} hari) atau data uji ({len(test)} hari) "
+            f"kosong untuk TRAIN_END={train_end}")
     return train, test
 
 
-def hitung_mu_cov(train, trading_days=TRADING_DAYS):
-    """Return dan kovarians tahunan, input untuk fungsi fitness GA."""
-    mu = train.mean().values * trading_days
-    cov = train.cov().values * trading_days
-    return mu, cov
+def hitung_mu_cov(train, trading_days=config.TRADING_DAYS):
+    """Return dan kovarians tahunan dari data latih (input fitness GA)."""
+    return train.mean().values * trading_days, train.cov().values * trading_days
 
 
 def main():
-    prices = unduh_harga(TICKERS, START, END)
-    prices.to_csv("harga_adjclose.csv")
+    os.makedirs(config.DATA_DIR, exist_ok=True)
+    mentah = unduh_harga(config.TICKERS, config.START, config.END)
+    prices, dibuang = bersihkan_harga(mentah, config.MAX_MISSING)
+    print(f"Ticker dibuang ({len(dibuang)}): {dibuang}")
+    print(f"Ticker dipakai: {prices.shape[1]} | hari: {len(prices)} "
+          f"({prices.index[0].date()} .. {prices.index[-1].date()})")
+
+    min_saham = math.ceil(1 / config.MAX_WEIGHT)
+    if prices.shape[1] < min_saham:
+        sys.exit(f"Saham tersisa {prices.shape[1]} < {min_saham}; "
+                 f"cap {config.MAX_WEIGHT} tidak layak. Tambah ticker.")
 
     rets = hitung_log_return(prices)
-    rets.to_csv("log_return.csv")
-
-    train, test = pisah_latih_uji(rets, TRAIN_END)
+    train, test = pisah_latih_uji(rets, config.TRAIN_END)
     print(f"Latih: {len(train)} hari | Uji: {len(test)} hari")
-
     mu, cov = hitung_mu_cov(train)
 
-    print("\nReturn tahunan (latih):")
-    print(pd.Series(mu, index=train.columns).round(3))
-    print("\nKorelasi (latih):")
-    print(train.corr().round(2))
-
-    np.savez("mu_cov_train.npz", mu=mu, cov=cov,
-             tickers=np.array(train.columns))
-    print("\nSelesai. File tersimpan di folder kerja.")
+    prices.to_csv(os.path.join(config.DATA_DIR, "harga_adjclose.csv"))
+    rets.to_csv(os.path.join(config.DATA_DIR, "log_return.csv"))
+    np.savez(os.path.join(config.DATA_DIR, "mu_cov_train.npz"),
+             mu=mu, cov=cov, tickers=np.array(train.columns))
+    print("Selesai. File tersimpan di data/.")
 
 
 if __name__ == "__main__":
