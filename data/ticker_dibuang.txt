@@ -1,0 +1,4 @@
+AMMN.JK	data kosong 35.7% > 5% (dihitung dari Adj Close)
+GOTO.JK	data kosong 10.9% > 5% (dihitung dari Adj Close)
+MBMA.JK	data kosong 31.9% > 5% (dihitung dari Adj Close)
+PGEO.JK	data kosong 29.0% > 5% (dihitung dari Adj Close)

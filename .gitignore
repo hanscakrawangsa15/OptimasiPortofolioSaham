@@ -1,3 +1,31 @@
-.superpowers/
+# Ignore Python cache
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore virtual environments
+.venv/
+venv/
+env/
+
+# Ignore build artifacts
+dist/
+build/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore environment variables
+.env
+.env.local
+*.log
+
+# Ignore Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Ignore tooling workspaces
+.superpowers/
 .pytest_cache/
