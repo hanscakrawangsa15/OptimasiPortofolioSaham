@@ -1,0 +1,8 @@
+numpy>=2.0
+pandas>=2.2
+scipy>=1.13
+matplotlib>=3.8
+statsmodels>=0.14
+yfinance>=0.2.50
+pyscipopt>=5.0     # solver eksak SCIP (sub-proyek B)
+pytest>=8.0

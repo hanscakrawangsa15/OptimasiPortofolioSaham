@@ -1,6 +1,6 @@
 # Optimasi Alokasi Dana Saham LQ45 dengan Batas Risiko dan Kardinalitas
 
-Menggantikan `2026-10-07-ga-portfolio-lq45-design.md` (maksimasi Sharpe kontinu).
+Menggantikan spesifikasi awal maksimasi Sharpe kontinu (dihapus; ada di riwayat git).
 
 **Sumber:** `Optimasi Alokasi Dana Saham LQ45 dengan Batas Risiko dan Kardinalitas.pdf` (rencana, otoritas
 utama) dan Ashraf dkk. (2026), *Invasive weed optimization based metaheuristic approach for solving
@@ -63,9 +63,9 @@ Sub-proyek (masing-masing spesifikasi dan rencana sendiri):
 - **D. Eksperimen dan analisis:** Fase 1 penalaan (jendela 1, K=7, 1,5x; 10 run per titik grid), Fase 2
   (CSV long), `evaluasi`, `stats`, `visualisasi`, `main`.
 
-Berkas lama (`portofolio.py`, `baseline.py`, `GeneticAlgorithm.py`, `walkforward.py`, `main.py` lama, dan tes
-mereka) dihapus hanya setelah penggantinya ada dan tesnya lulus (`portofolio` di A, `baseline` di B, GA di C,
-`main` di D). `walkforward.py` dilebur ke `data.py` di A.
+Berkas pipeline lama (maksimasi Sharpe: `portofolio.py`, `baseline.py`, `GeneticAlgorithm.py`, tes dan
+hasilnya, spesifikasi dan rencana lama) sudah dihapus; `main.py`, `evaluasi.py`, `visualisasi.py` menjadi stub
+yang ditulis ulang di D. `walkforward.py` dilebur ke `data.py` di A.
 
 ## 5. Sub-proyek A: antarmuka
 
