@@ -1,0 +1,17 @@
+{
+  "w": 1.0,
+  "c1": 1.0,
+  "c2": 1.0,
+  "v_maks": 1.0,
+  "swarm": 40,
+  "iterasi": 500,
+  "anggaran": 20000,
+  "data_penalaan": "jendela_1",
+  "K": 7,
+  "seed_penalaan": [
+    100,
+    129
+  ],
+  "median_R_penalaan": 0.43146833951451924,
+  "aturan": "median R tertinggi; selisih <= 0,001 -> std terkecil"
+}

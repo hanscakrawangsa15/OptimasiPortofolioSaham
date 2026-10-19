@@ -41,6 +41,9 @@ python3 -m pytest tests -q          # semua tes harus hijau
 │   ├── evaluasi.py            Metrik in/out-of-sample                              [D, stub]
 │   ├── stats.py               Wilcoxon + Holm, deskriptif                          [D, stub]
 │   ├── visualisasi.py         Gambar                                               [D, stub]
+├── notebooks/                 Notebook eksperimen: GA_Portofolio_LQ45.ipynb (dekoder, fitness, GA)
+│                              dan PSO_Portofolio_LQ45.ipynb (PSO, perbandingan PSO vs GA)
+│                              dan PSO_Fase1_Penalaan_LQ45.ipynb (Fase 1: penalaan PSO, parameter beku)
 ├── tests/                     Satu berkas test_<modul>.py per modul
 ├── data/                      Harga raw/adj, return sederhana, windows/, laporan_data.md
 ├── hasil/
