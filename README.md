@@ -16,6 +16,15 @@ python3 src/scrappingdata.py        # unduh data (hanya satu orang; lihat CONTRI
 python3 -m pytest tests -q          # semua tes harus hijau
 ```
 
+## Menjalankan GUI
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Pilih data, K, modal, batas risiko, algoritma (GA/PSO), dan jumlah seed di sisi kiri, lalu klik **Jalankan**.
+
 ## Struktur folder
 
 ```
