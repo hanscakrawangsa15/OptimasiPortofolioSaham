@@ -2,13 +2,20 @@
 import numpy as np
 from scipy.stats import mannwhitneyu
 
-from algorithms import ga, pso
+from algorithms import ga, pso, sa
 from fitness import deb_better
 
 METODE = {
     "GA": lambda P, seed, trace: ga.run(P, seed=seed, trace=trace),
-    "PSO awal": lambda P, seed, trace: pso.run(P, seed=seed, trace=trace, **pso.PSO_AWAL),
-    "PSO terpilih": lambda P, seed, trace: pso.run(P, seed=seed, trace=trace, **pso.PSO_TERPILIH),
+    "PSO awal": lambda P, seed, trace: pso.run(
+        P, seed=seed, trace=trace, **pso.PSO_AWAL
+    ),
+    "PSO terpilih": lambda P, seed, trace: pso.run(
+        P, seed=seed, trace=trace, **pso.PSO_TERPILIH
+    ),
+    "SA": lambda P, seed, trace: sa.run(
+        P, seed=seed, trace=trace
+    ),
 }
 
 
