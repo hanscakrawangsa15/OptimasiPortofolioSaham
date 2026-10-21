@@ -39,7 +39,6 @@ WINDOW_TRAIN = 504
 WINDOW_TEST = 126
 WINDOW_STEP = 126
 
-N_RUNS = 30
 BUDGET_EVAL = 20_000                     # anggaran evaluasi per run (semua metaheuristik)
 HISTORY_STEP = 200                       # riwayat konvergensi dicatat tiap 200 evaluasi
 N_JENDELA = 5
