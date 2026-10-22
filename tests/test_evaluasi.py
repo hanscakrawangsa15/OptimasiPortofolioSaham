@@ -89,7 +89,13 @@ def test_jalankan_dan_terbaik():
     runs2 = runner.jalankan("PSO terpilih", P, seeds=[0, 1])
     assert len(runs2) == 2 and all(r.n_eval == config.BUDGET_EVAL for r in runs2)
     with pytest.raises(ValueError):
-        runner.jalankan("SA", P, seeds=[0])
+        runner.jalankan("XYZ", P, seeds=[0])
+
+
+def test_sa_terdaftar_di_runner():
+    P = _P(5)
+    runs = runner.jalankan("SA", P, seeds=[0, 1])
+    assert len(runs) == 2 and all(r.n_eval == config.BUDGET_EVAL and r.feasible for r in runs)
 
 
 def test_ringkas_dan_bandingkan():

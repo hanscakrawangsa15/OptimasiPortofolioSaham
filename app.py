@@ -47,7 +47,7 @@ K = st.sidebar.selectbox("Maksimum jumlah saham (K)", config.K_LIST, index=3)
 D = st.sidebar.number_input("Modal (Rp)", min_value=1_000_000.0, max_value=1_000_000_000.0,
                             value=float(config.D_UTAMA), step=1_000_000.0)
 mult = st.sidebar.selectbox("Batas risiko (× volatilitas 1/N)", config.SIGMA_MULT, index=0)
-algo = st.sidebar.multiselect("Algoritma", ["GA", "PSO"], default=["GA", "PSO"])
+algo = st.sidebar.multiselect("Algoritma", ["GA", "PSO", "SA"], default=["GA", "PSO", "SA"])
 mode_pso = st.sidebar.radio("Parameter PSO", ["terpilih (hasil penalaan Fase 1)", "awal (PDF)"])
 n_seed = st.sidebar.slider("Jumlah seed", 1, 30, 10)
 jalankan = st.sidebar.button("Jalankan", type="primary")
@@ -55,7 +55,13 @@ jalankan = st.sidebar.button("Jalankan", type="primary")
 st.title("Optimasi Alokasi Dana Saham LQ45")
 st.caption("Maksimasi return ekspektasi dengan batas risiko σ_max, maksimum K saham, dan lot 100 lembar.")
 
-metode = tuple(("GA" if a == "GA" else ("PSO terpilih" if mode_pso.startswith("terpilih") else "PSO awal")) for a in algo)
+def _nama_metode(a):
+    if a == "PSO":
+        return "PSO terpilih" if mode_pso.startswith("terpilih") else "PSO awal"
+    return a
+
+
+metode = tuple(_nama_metode(a) for a in algo)
 if jalankan:
     st.session_state["param"] = (nama_data, K, D, mult, metode, n_seed)
 param = st.session_state.get("param")
@@ -115,7 +121,8 @@ with tabs[2]:
     st.pyplot(viz.plot_konvergensi(hasil, R_bf))
     st.pyplot(viz.plot_risiko_return(hasil, P.sigma_max))
     for m in metode:
-        st.pyplot(viz.plot_proses(trace[m], P, f"{m}: proses pada seed terbaik ({terbaik[m].seed})"))
+        judul = f"{m}: proses pada seed terbaik ({terbaik[m].seed})"
+        st.pyplot(viz.plot_proses_sa(trace[m], P, judul) if m == "SA" else viz.plot_proses(trace[m], P, judul))
 
 # ------------------------------------------------------------------ GA vs PSO
 with tabs[3]:
@@ -127,10 +134,14 @@ with tabs[3]:
     tab.columns = ["Median R", "Std R", "Min R", "Maks R", "Pangsa layak", "Pangsa sukses", "Detik/run", "Evaluasi ke-terbaik (median)"]
     st.dataframe(tab.style.format("{:.4f}"))
     st.pyplot(viz.plot_box(hasil, R_bf))
-    if len(metode) == 2:
-        c = runner.bandingkan(hasil[metode[0]], hasil[metode[1]])
-        kata = {"A": metode[0], "B": metode[1]}.get(c["lebih_baik"], c["lebih_baik"])
-        st.write(f"Uji Mann–Whitney: p = {c['p']:.4f} → **{kata}**" + (" lebih baik." if c["lebih_baik"] != "tidak berbeda nyata" else "."))
+    if len(metode) >= 2:
+        for i in range(len(metode)):
+            for j in range(i + 1, len(metode)):
+                a_, b_ = metode[i], metode[j]
+                c = runner.bandingkan(hasil[a_], hasil[b_])
+                kata = {"A": a_, "B": b_}.get(c["lebih_baik"], c["lebih_baik"])
+                st.write(f"Mann–Whitney {a_} vs {b_}: p = {c['p']:.4f} → **{kata}**"
+                         + (" lebih baik." if c["lebih_baik"] != "tidak berbeda nyata" else "."))
         if n_seed < 10:
             st.warning("Jumlah seed kecil; uji statistik kurang andal (disarankan ≥ 10, idealnya 30).")
 
@@ -177,6 +188,21 @@ with tabs[5]:
         with st.expander("Seluruh hasil per run"):
             st.dataframe(grid, hide_index=True)
 
+    st.subheader("Hasil Simulated Annealing (30 seed)")
+    f_sa = os.path.join(config.HASIL_DIR, "hasil_sa_30_seed.csv")
+    if not os.path.exists(f_sa):
+        st.info("Berkas hasil/hasil_sa_30_seed.csv belum ada.")
+    else:
+        sa_df = pd.read_csv(f_sa)
+        st.write("Data kasus_tetap, K = 7, anggaran 20.000 evaluasi per run (dari notebooks/SA_Portofolio_LQ45.ipynb).")
+        c = st.columns(4)
+        c[0].metric("Median R", f"{sa_df['Return'].median():.4f}")
+        c[1].metric("Maks R", f"{sa_df['Return'].max():.4f}")
+        c[2].metric("Std R", f"{sa_df['Return'].std():.4f}")
+        c[3].metric("Run layak", f"{int(sa_df['Feasible'].sum())} / {len(sa_df)}")
+        with st.expander("Seluruh hasil per seed"):
+            st.dataframe(sa_df, hide_index=True)
+
 # ------------------------------------------------------------------ Tentang
 with tabs[6]:
     st.markdown(f"""
@@ -187,6 +213,6 @@ bobot ≤ {config.MAX_WEIGHT:.0%} per saham bila K ≥ {config.CAP_BERLAKU_MULAI
 **Kromosom 2N+1.** N kunci prioritas (memilih K saham), N bobot mentah, dan 1 gen kas; dekoder deterministik
 menghasilkan lot bulat. Hanya batas risiko yang bisa dilanggar → aturan kelayakan Deb.
 
-**Anggaran.** Tiap run {config.BUDGET_EVAL:,} evaluasi (GA: populasi 100; PSO: swarm 40).
+**Anggaran.** Tiap run {config.BUDGET_EVAL:,} evaluasi (GA: populasi 100; PSO: swarm 40; SA: satu solusi dengan kalibrasi temperatur awal, jadwal pendinginan geometrik, dan penerimaan Metropolis di bawah aturan Deb). SA lebih lambat per run (sekitar 4 detik), jadi gunakan jumlah seed kecil untuk percobaan cepat.
 PSO "terpilih" memakai w = 1,0, c₁ = c₂ = 1,0, v_maks = 1,0 hasil penalaan Fase 1 pada jendela_1; "awal" memakai w = 0,7, c = 1,5, v_maks = 0,2 dari rencana.
 """)

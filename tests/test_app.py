@@ -29,3 +29,13 @@ def test_jalankan_dua_algoritma():
     assert len(at.tabs) == 7
     assert len(at.metric) >= 10                          # 5 metrik x 2 algoritma
     assert any("Mann" in m.value for m in at.markdown)
+
+
+def test_jalankan_sa():
+    at = _app()
+    at.sidebar.multiselect[0].set_value(["SA"])
+    at.sidebar.slider[0].set_value(2)
+    at.sidebar.button[0].click()
+    at.run()
+    assert not at.exception
+    assert len(at.tabs) == 7 and len(at.metric) >= 5
