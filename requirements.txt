@@ -6,3 +6,4 @@ statsmodels>=0.14
 yfinance>=0.2.50
 pyscipopt>=5.0     # solver eksak SCIP (sub-proyek B)
 pytest>=8.0
+streamlit>=1.40

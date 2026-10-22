@@ -26,9 +26,10 @@ MAX_MISSING = 0.05         # ticker dengan data kosong > 5% (Adj Close) dibuang
 RISK_FREE = 0.05           # per tahun
 
 # ---- Masalah optimasi: maksimasi return ekspektasi di bawah batas risiko ----
-K_LIST = [1, 2, 3, 4, 5, 7, 10]          # jumlah saham maksimum
+K_LIST = [2, 3, 5, 7, 10]                # jumlah saham maksimum
 SIGMA_MULT = [1.5, 2.0, 2.5]             # batas risiko = kelipatan vol portofolio 1/N
 D_LEVELS = [5e6, 10e6, 20e6, 35e6, 50e6, 100e6]   # modal (Rp)
+D_UTAMA = 5e6                            # modal utama (Rp)
 LOT_SIZE = 100                           # 1 lot = 100 lembar; harga beli = harga RAW
 MAX_WEIGHT = 0.20                        # batas per saham ...
 CAP_BERLAKU_MULAI_K = 7                  # ... hanya berlaku untuk K >= 7
@@ -38,4 +39,6 @@ WINDOW_TRAIN = 504
 WINDOW_TEST = 126
 WINDOW_STEP = 126
 
-N_RUNS = 30
+BUDGET_EVAL = 20_000                     # anggaran evaluasi per run (semua metaheuristik)
+HISTORY_STEP = 200                       # riwayat konvergensi dicatat tiap 200 evaluasi
+N_JENDELA = 5

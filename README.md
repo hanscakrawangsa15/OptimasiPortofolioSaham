@@ -16,31 +16,34 @@ python3 src/scrappingdata.py        # unduh data (hanya satu orang; lihat CONTRI
 python3 -m pytest tests -q          # semua tes harus hijau
 ```
 
+## Menjalankan GUI
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Pilih data, K, modal, batas risiko, algoritma (GA/PSO), dan jumlah seed di sisi kiri, lalu klik **Jalankan**.
+
 ## Struktur folder
 
 ```
 .
 ├── config.py                  Parameter global (K, sigma, D, lot, jendela, anggaran, seed)
-├── main.py                    Orkestrasi eksperimen                                [D, stub]
+├── app.py                     GUI Streamlit untuk hasil GA dan PSO
 ├── requirements.txt, pytest.ini
 ├── src/
-│   ├── scrappingdata.py       Unduh data, bersihkan, return sederhana, jendela     [ADA]
-│   ├── laporan_data.py        Anomali data + data/laporan_data.md                  [ADA]
-│   ├── walkforward.py         Jendela walk-forward                [ADA, dilebur ke data.py di A]
-│   ├── data.py                Muat data dan skenario                               [A, stub]
-│   ├── problem.py             Problem dan Result                                   [A, stub]
-│   ├── decoder.py             Kunci + bobot mentah -> lot layak                    [A, stub]
-│   ├── fitness.py             Evaluator + aturan Deb                               [A, stub]
-│   ├── algorithms/
-│   │   ├── exact_scip.py      Acuan eksak MIQCP (SCIP)                             [B, stub]
-│   │   ├── enum_relax.py      Enumerasi himpunan + QP kontinu (batas atas)         [B, stub]
-│   │   ├── greedy.py          Greedy forward selection                             [B, stub]
-│   │   ├── topk_qp.py         Top-K + QP                                           [B, stub]
-│   │   ├── random_equal.py    Acak valid, bobot sama                               [B, stub]
-│   │   └── ga.py  sa.py  pso.py  de.py                                             [C, stub]
-│   ├── evaluasi.py            Metrik in/out-of-sample                              [D, stub]
-│   ├── stats.py               Wilcoxon + Holm, deskriptif                          [D, stub]
-│   ├── visualisasi.py         Gambar                                               [D, stub]
+│   ├── scrappingdata.py       Unduh data, bersihkan, return sederhana, jendela
+│   ├── laporan_data.py        Anomali data + data/laporan_data.md
+│   ├── walkforward.py         Jendela walk-forward
+│   ├── data.py                Muat jendela data dan bentuk Problem
+│   ├── problem.py             Problem dan Result
+│   ├── decoder.py             Kunci + bobot mentah -> lot layak
+│   ├── fitness.py             Evaluator + aturan Deb
+│   ├── evaluasi.py            Rincian kas, analisis, uji pada data uji
+│   ├── runner.py              Jalankan banyak seed, ringkas, bandingkan
+│   ├── visualisasi.py         Grafik untuk GUI
+│   └── algorithms/            ga.py, pso.py, brute_force_k2.py
 ├── notebooks/                 Notebook eksperimen: GA_Portofolio_LQ45.ipynb (dekoder, fitness, GA)
 │                              dan PSO_Portofolio_LQ45.ipynb (PSO, perbandingan PSO vs GA)
 │                              dan PSO_Fase1_Penalaan_LQ45.ipynb (Fase 1: penalaan PSO, parameter beku)
