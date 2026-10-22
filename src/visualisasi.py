@@ -79,6 +79,29 @@ def plot_box(hasil, R_opt=None):
     return fig
 
 
+def plot_konvergensi_profil(kurva, sigma_max):
+    """Kurva konvergensi per profil risiko (satu panel tiap profil): median dan rentang kuartil tiap metode.
+
+    kurva = {profil: {metode: hasil runner.konvergensi}}; sigma_max = {profil: batas risiko}.
+    """
+    profil = list(kurva)
+    fig, axs = plt.subplots(1, len(profil), figsize=(5 * len(profil), 3.8), sharex=True)
+    axs = np.atleast_1d(axs)
+    for ax, p in zip(axs, profil):
+        for m, k in kurva[p].items():
+            ax.plot(k["evaluasi"], k["median"], color=warna(m), label=m)
+            ax.fill_between(k["evaluasi"], k["q1"], k["q3"], color=warna(m), alpha=0.2)
+            if not np.isnan(k["capai_99"]):
+                ax.axvline(k["capai_99"], color=warna(m), ls=":", lw=1)
+        ax.set(title=f"{p} (σ_max = {sigma_max[p]:.3f})", xlabel="jumlah evaluasi")
+        ax.grid(alpha=0.3)
+    axs[0].set_ylabel("R terbaik yang layak")
+    axs[0].legend(fontsize=8)
+    fig.suptitle("Konvergensi menurut profil risiko (garis putus-putus: 99% perbaikan tercapai)", fontsize=10)
+    fig.tight_layout()
+    return fig
+
+
 def plot_proses(trace, P, judul):
     """Proses satu run: sebaran populasi (risiko-return) pada awal, tengah, akhir, plus R terbaik per iterasi."""
     G = len(trace["R"])

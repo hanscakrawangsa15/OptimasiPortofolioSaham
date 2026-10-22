@@ -40,6 +40,14 @@ def hitung_semua(nama_data, K, D, mult, metode, n_seed):
     return hasil, terbaik, trace, R_bf
 
 
+@st.cache_data(show_spinner=False)
+def hitung_profil(nama_data, K, D, metode, n_seed):
+    """Jalankan tiap metode pada tiap profil risiko; mengembalikan {profil: {metode: [Result]}}."""
+    w = muat_jendela(nama_data)
+    return {p: {m: runner.jalankan(m, buat_problem(w, K, D=D, mult=mult), range(n_seed)) for m in metode}
+            for p, mult in runner.PROFIL_RISIKO.items()}
+
+
 # ------------------------------------------------------------------ sidebar
 st.sidebar.title("Pengaturan")
 nama_data = st.sidebar.selectbox("Data (jendela walk-forward)", NAMA_DATA)
@@ -78,7 +86,7 @@ r_uji = w["return_uji"]
 st.write(f"**{nama_data}** · latih {w['tanggal_latih_awal']} s.d. {w['tanggal_latih_akhir']} · "
          f"uji {w['tanggal_uji_awal']} s.d. {w['tanggal_uji_akhir']} · K = {K} · σ_max = {P.sigma_max:.4f}")
 
-tabs = st.tabs(["Ringkasan", "Portofolio", "Proses", "GA vs PSO", "Data uji", "Hasil penelitian", "Tentang"])
+tabs = st.tabs(["Ringkasan", "Portofolio", "Proses", "GA vs PSO", "Data uji", "Profil risiko", "Hasil penelitian", "Tentang"])
 
 # ------------------------------------------------------------------ Ringkasan
 with tabs[0]:
@@ -163,8 +171,44 @@ with tabs[4]:
     st.dataframe(pd.DataFrame(baris).T)
     st.caption("Data uji tidak dipakai saat optimasi; hasilnya jauh bisa berbeda dari ekspektasi in-sample.")
 
-# ------------------------------------------------------------------ Hasil penelitian
+# ------------------------------------------------------------------ Profil risiko
 with tabs[5]:
+    st.subheader("Konvergensi menurut profil risiko")
+    st.markdown("Profil risiko menentukan batas risiko σ_max sebagai kelipatan volatilitas portofolio 1/N: "
+                + ", ".join(f"**{n}** = {m}×" for n, m in runner.PROFIL_RISIKO.items())
+                + ". Data, K, modal, algoritma, dan jumlah seed mengikuti pengaturan di sisi kiri.")
+    n_run = len(runner.PROFIL_RISIKO) * len(metode) * n_seed
+    st.caption(f"Menjalankan {n_run} run ({len(runner.PROFIL_RISIKO)} profil × {len(metode)} algoritma × {n_seed} seed); "
+               "SA sekitar 4 detik per run.")
+    if st.button("Hitung analisis profil risiko"):
+        st.session_state["profil"] = (nama_data, K, D, metode, n_seed)
+    if st.session_state.get("profil") != (nama_data, K, D, metode, n_seed):
+        st.info("Klik tombol di atas untuk menghitung (hasil untuk pengaturan ini belum ada).")
+    else:
+        with st.spinner("Menjalankan semua profil risiko..."):
+            profil_runs = hitung_profil(nama_data, K, D, metode, n_seed)
+        kurva = {p: {m: runner.konvergensi(rs) for m, rs in per.items()} for p, per in profil_runs.items()}
+        smax = {p: w["sigma_max"][runner.PROFIL_RISIKO[p]] for p in profil_runs}
+        st.pyplot(viz.plot_konvergensi_profil(kurva, smax))
+        baris = []
+        for p, per in profil_runs.items():
+            for m, rs in per.items():
+                k, ring = kurva[p][m], runner.ringkas(rs)
+                baris.append({"Profil": p, "Algoritma": m, "σ_max": smax[p], "Median R akhir": k["R_akhir"],
+                              "Setara Rp/tahun": rp(k["R_akhir"] * D) if not np.isnan(k["R_akhir"]) else "-",
+                              "Pangsa layak": ring["layak"], "Evaluasi layak pertama": k["layak_pertama"],
+                              "Evaluasi capai 90%": k["capai_90"], "Evaluasi capai 99%": k["capai_99"]})
+        tab = pd.DataFrame(baris)
+        st.dataframe(tab.style.format({"σ_max": "{:.4f}", "Median R akhir": "{:.4f}", "Pangsa layak": "{:.0%}"}),
+                     hide_index=True)
+        st.caption("Capai X% = evaluasi pertama saat median R terbaik mencapai X% dari total perbaikannya "
+                   "(dihitung dari titik layak pertama sampai akhir anggaran). Makin kecil, makin cepat konvergen.")
+        beda = {p: {m: kurva[p][m]["R_akhir"] for m in metode} for p in profil_runs}
+        st.markdown("**Pengaruh profil terhadap return akhir (median):** "
+                    + "; ".join(f"{m}: " + " → ".join(f"{p} {beda[p][m]:.4f}" for p in profil_runs) for m in metode))
+
+# ------------------------------------------------------------------ Hasil penelitian
+with tabs[6]:
     st.subheader("Penalaan parameter PSO (Fase 1)")
     f_grid = os.path.join(config.HASIL_DIR, "csv", "pso_fase1_grid.csv")
     f_beku = os.path.join(config.HASIL_DIR, "csv", "pso_parameter_beku.json")
@@ -204,7 +248,7 @@ with tabs[5]:
             st.dataframe(sa_df, hide_index=True)
 
 # ------------------------------------------------------------------ Tentang
-with tabs[6]:
+with tabs[7]:
     st.markdown(f"""
 **Masalah.** Maksimalkan R = Σ wᵢμᵢ + kas·r_f dengan σ = √(wᵀΣw) ≤ σ_max, paling banyak K saham,
 bobot ≤ {config.MAX_WEIGHT:.0%} per saham bila K ≥ {config.CAP_BERLAKU_MULAI_K}, pembelian dalam lot {config.LOT_SIZE} lembar
