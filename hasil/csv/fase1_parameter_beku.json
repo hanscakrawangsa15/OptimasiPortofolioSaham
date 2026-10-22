@@ -1,0 +1,133 @@
+{
+  "GA": {
+    "parameter": {
+      "pop": 400,
+      "laju_mut": 2.0
+    },
+    "grid_parameter": {
+      "pop": 400,
+      "laju_mut": 2.0
+    },
+    "parameter_awal": {
+      "pop": 100,
+      "laju_mut": 1.0
+    },
+    "median_R_penalaan": 0.435963234546061,
+    "std_R_penalaan": 0.0038449071780190195,
+    "median_R_awal": 0.4315275166640698,
+    "p_mannwhitney_vs_awal": 0.004629707719856772,
+    "di_tepi_grid": [
+      "pop"
+    ],
+    "titik_diuji": 16,
+    "run_per_titik": 30,
+    "data_penalaan": "jendela_1",
+    "K": 7,
+    "pengali_risiko": 1.5,
+    "anggaran": 20000,
+    "seed_penalaan": [
+      100,
+      129
+    ],
+    "aturan": "median R tertinggi; selisih <= 0.001 -> std terkecil"
+  },
+  "SA": {
+    "parameter": {
+      "target_acceptance": 0.8,
+      "T_end_ratio": 0.0001
+    },
+    "grid_parameter": {
+      "target_acceptance": 0.8,
+      "T_end_ratio": 0.0001
+    },
+    "parameter_awal": {
+      "target_acceptance": 0.8,
+      "T_end_ratio": 0.001
+    },
+    "median_R_penalaan": 0.43702889931779243,
+    "std_R_penalaan": 0.0032118334855919892,
+    "median_R_awal": 0.4357865242220934,
+    "p_mannwhitney_vs_awal": 0.3245027418080947,
+    "di_tepi_grid": [],
+    "titik_diuji": 12,
+    "run_per_titik": 30,
+    "data_penalaan": "jendela_1",
+    "K": 7,
+    "pengali_risiko": 1.5,
+    "anggaran": 20000,
+    "seed_penalaan": [
+      100,
+      129
+    ],
+    "aturan": "median R tertinggi; selisih <= 0.001 -> std terkecil"
+  },
+  "PSO": {
+    "parameter": {
+      "w": 1.0,
+      "v_maks": 0.2,
+      "c1": 2.5,
+      "c2": 2.5
+    },
+    "grid_parameter": {
+      "w": 1.0,
+      "c": 2.5,
+      "v_maks": 0.2
+    },
+    "parameter_awal": {
+      "w": 0.7,
+      "v_maks": 0.2,
+      "c1": 1.5,
+      "c2": 1.5
+    },
+    "median_R_penalaan": 0.4396416300226599,
+    "std_R_penalaan": 0.0033463427512811957,
+    "median_R_awal": 0.4357898278600546,
+    "p_mannwhitney_vs_awal": 0.002352393201898854,
+    "di_tepi_grid": [
+      "w"
+    ],
+    "titik_diuji": 39,
+    "run_per_titik": 30,
+    "data_penalaan": "jendela_1",
+    "K": 7,
+    "pengali_risiko": 1.5,
+    "anggaran": 20000,
+    "seed_penalaan": [
+      100,
+      129
+    ],
+    "aturan": "median R tertinggi; selisih <= 0.001 -> std terkecil"
+  },
+  "DE": {
+    "parameter": {
+      "F": 0.1,
+      "CR": 0.5
+    },
+    "grid_parameter": {
+      "F": 0.1,
+      "CR": 0.5
+    },
+    "parameter_awal": {
+      "F": 0.5,
+      "CR": 0.9
+    },
+    "median_R_penalaan": 0.44231412476230664,
+    "std_R_penalaan": 0.002117369701575282,
+    "median_R_awal": 0.43664149515072503,
+    "p_mannwhitney_vs_awal": 6.459126922448235e-09,
+    "di_tepi_grid": [
+      "F"
+    ],
+    "titik_diuji": 36,
+    "run_per_titik": 30,
+    "data_penalaan": "jendela_1",
+    "K": 7,
+    "pengali_risiko": 1.5,
+    "anggaran": 20000,
+    "seed_penalaan": [
+      100,
+      129
+    ],
+    "aturan": "median R tertinggi; selisih <= 0.001 -> std terkecil"
+  }
+}

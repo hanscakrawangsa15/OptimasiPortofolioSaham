@@ -42,3 +42,21 @@ WINDOW_STEP = 126
 BUDGET_EVAL = 20_000                     # anggaran evaluasi per run (semua metaheuristik)
 HISTORY_STEP = 200                       # riwayat konvergensi dicatat tiap 200 evaluasi
 N_JENDELA = 5
+
+
+# ---- Konsistensi antar metaheuristik (spesifikasi bagian 5-6) ----
+SEED_FRAKSI = 0.10                       # proporsi populasi awal yang disemai top-K dengan g0 rendah (semua algoritma)
+
+
+def n_semai(ukuran_populasi):
+    """Jumlah individu awal yang disemai: sama proporsinya untuk GA, PSO, DE; SA (satu individu) selalu disemai."""
+    return max(1, round(SEED_FRAKSI * ukuran_populasi))
+
+
+# ---- Fase 1: penalaan parameter (hanya data latih jendela 1, K = 7, 1,5x; 30 run per titik grid) ----
+TUNING_DATA = "jendela_1"
+TUNING_K = 7
+TUNING_MULT = 1.5
+TUNING_SEEDS = tuple(range(100, 130))    # terpisah dari seed evaluasi akhir (0..29)
+TUNING_TOLERANSI = 0.001                 # selisih median <= ini dianggap seri; menang yang simpangan bakunya terkecil
+SEEDS_FASE2 = tuple(range(30))           # seed sama untuk semua algoritma pada Fase 2

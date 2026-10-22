@@ -8,7 +8,7 @@ from decoder import decode_batch, init_population
 from fitness import Evaluator, deb_rank, deb_urut
 
 GA_PARAM = dict(pop=100, turnamen=3, p_sbx=0.9, eta=15.0, sigma_mut=0.1,
-                p_swap=0.2, elitisme=2, n_seed=10)
+                p_swap=0.2, elitisme=2, n_seed=None, laju_mut=1.0)   # laju_mut: pengali peluang mutasi per gen (1/N)
 
 
 def turnamen(rank, rng, n, k):
@@ -54,7 +54,8 @@ def run(P, budget=config.BUDGET_EVAL, seed=0, trace=False, **kw):
         rec["n_unik"].append(len({tuple(np.where(l > 0)[0]) for l in lots}))
         rec["lots_terbaik"].append(lots[deb_urut(R, v)[0]])
 
-    pop = init_population(P, rng, n, prm["n_seed"])
+    n_seed = config.n_semai(n) if prm["n_seed"] is None else prm["n_seed"]
+    pop = init_population(P, rng, n, n_seed)
     R, s, v = ev.evaluate(pop)
     catat(pop, R, s, v)
 
@@ -68,7 +69,7 @@ def run(P, budget=config.BUDGET_EVAL, seed=0, trace=False, **kw):
         kids = np.empty_like(pop)
         kids[0::2], kids[1::2] = np.where(pakai, c1, p1), np.where(pakai, c2, p2)
 
-        mask = rng.random((n, N + 1)) < 1.0 / N                  # mutasi Gaussian: bobot mentah dan g0
+        mask = rng.random((n, N + 1)) < prm["laju_mut"] / N                  # mutasi Gaussian: bobot mentah dan g0
         kids[:, N:] += mask * rng.normal(0.0, prm["sigma_mut"], (n, N + 1))
         mutasi_swap(kids, P, prm["p_swap"], rng)
         kids = np.clip(kids, 0.0, 1.0)

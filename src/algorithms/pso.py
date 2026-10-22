@@ -6,9 +6,11 @@ import numpy as np
 import config
 from decoder import decode, decode_batch, init_population
 from fitness import Evaluator, deb_lebih_baik, deb_urut
+from parameter import kw_terpilih
 
-PSO_AWAL = dict(n=40, w=0.7, c1=1.5, c2=1.5, v_maks=0.2)       # parameter awal (PDF)
-PSO_TERPILIH = dict(w=1.0, c1=1.0, c2=1.0, v_maks=1.0)         # hasil penalaan Fase 1 (jendela_1, K=7)
+PSO_AWAL = dict(n=40, w=0.7, c1=1.5, c2=1.5, v_maks=0.2, n_seed=None)   # parameter awal (PDF)
+# Hasil penalaan Fase 1 yang dibekukan (hasil/csv/fase1_parameter_beku.json); cadangan: penalaan lama tanpa semai.
+PSO_TERPILIH = kw_terpilih("PSO") or dict(w=1.0, c1=1.0, c2=1.0, v_maks=1.0)
 
 
 def run(P, budget=config.BUDGET_EVAL, seed=0, trace=False, **kw):
@@ -22,7 +24,8 @@ def run(P, budget=config.BUDGET_EVAL, seed=0, trace=False, **kw):
              "lots_terbaik", "kecepatan", "jarak", "x_min", "x_max")
     rec = {k: [] for k in kunci} if trace else None
 
-    x = init_population(P, rng, n, n_seed=0)                  # posisi awal acak seragam
+    n_seed = config.n_semai(n) if prm["n_seed"] is None else prm["n_seed"]
+    x = init_population(P, rng, n, n_seed=n_seed)             # posisi awal acak seragam, sebagian disemai top-K
     vel = rng.uniform(-vm, vm, (n, d))
     R, s, vi = ev.evaluate(x)
     pb_x, pb_R, pb_s, pb_v = x.copy(), R.copy(), s.copy(), vi.copy()    # pbest tiap partikel

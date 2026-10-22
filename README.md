@@ -25,6 +25,19 @@ streamlit run app.py
 
 Pilih data, K, modal, batas risiko, algoritma (GA/PSO), dan jumlah seed di sisi kiri, lalu klik **Jalankan**.
 
+## Eksperimen (Fase 1 dan Fase 2)
+
+Keempat metaheuristik (GA, PSO, SA, DE) memakai dekoder, `Evaluator`, aturan Deb, anggaran 20.000 evaluasi, dan
+semai populasi awal yang sama (10% populasi disemai top-K dengan g0 rendah; SA memulai dari satu individu semai).
+
+```bash
+python3 src/penalaan.py      # Fase 1: tala tiap algoritma (jendela_1, K=7, 30 run/titik), bekukan ke hasil/csv/fase1_parameter_beku.json
+python3 src/eksperimen.py    # Fase 2: 4 algoritma x 30 masalah x 30 seed -> hasil/csv/fase2_hasil.csv
+```
+
+Grid Fase 1: GA populasi x laju mutasi, SA peluang penerimaan awal (T0) x rasio suhu akhir (laju pendinginan),
+PSO w x c lalu v_maks, DE F x CR; grid diperluas satu kali bila nilai terbaik berada di tepi.
+
 ## Struktur folder
 
 ```
@@ -42,8 +55,12 @@ Pilih data, K, modal, batas risiko, algoritma (GA/PSO), dan jumlah seed di sisi 
 │   ├── fitness.py             Evaluator + aturan Deb
 │   ├── evaluasi.py            Rincian kas, analisis, uji pada data uji
 │   ├── runner.py              Jalankan banyak seed, ringkas, bandingkan
+│   ├── penalaan.py            Fase 1: penalaan parameter semua algoritma
+│   ├── eksperimen.py          Fase 2: semua algoritma x 30 masalah x 30 seed
+│   ├── stats.py               Peringkat, Wilcoxon berpasangan + Holm
+│   ├── parameter.py           Pembaca parameter beku Fase 1
 │   ├── visualisasi.py         Grafik untuk GUI
-│   └── algorithms/            ga.py, pso.py, brute_force_k2.py
+│   └── algorithms/            ga.py, sa.py, pso.py, de.py, brute_force_k2.py
 ├── notebooks/                 Notebook eksperimen: GA_Portofolio_LQ45.ipynb (dekoder, fitness, GA)
 │                              dan PSO_Portofolio_LQ45.ipynb (PSO, perbandingan PSO vs GA)
 │                              dan PSO_Fase1_Penalaan_LQ45.ipynb (Fase 1: penalaan PSO, parameter beku)

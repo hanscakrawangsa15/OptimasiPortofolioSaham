@@ -6,7 +6,7 @@ import config
 from decoder import decode_batch, init_population
 from fitness import Evaluator, deb_lebih_baik, deb_urut
 
-DE_PARAM = dict(pop=100, F=0.5, CR=0.9, n_seed=0)
+DE_PARAM = dict(pop=100, F=0.5, CR=0.9, n_seed=None)
 
 
 def run(P, budget=config.BUDGET_EVAL, seed=0, trace=False, **kw):
@@ -26,7 +26,8 @@ def run(P, budget=config.BUDGET_EVAL, seed=0, trace=False, **kw):
     ev = Evaluator(P, budget)
     start = time.perf_counter()
     n, d = pop_size, P.n_genes
-    x = init_population(P, rng, n, n_seed=int(prm['n_seed']))
+    n_seed = config.n_semai(n) if prm['n_seed'] is None else int(prm['n_seed'])
+    x = init_population(P, rng, n, n_seed=n_seed)
     R, sigma, viol = ev.evaluate(x)
     trace_data = {k: [] for k in ('R', 'sigma', 'viol', 'g0', 'kas', 'n_unik', 'lots_terbaik')} if trace else None
 

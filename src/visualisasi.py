@@ -5,7 +5,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-WARNA = {"GA": "#0072B2", "PSO": "#D55E00", "SA": "#CC79A7"}
+WARNA = {"GA": "#0072B2", "PSO": "#D55E00", "SA": "#CC79A7", "DE": "#009E73"}
 
 
 def warna(metode):
@@ -54,7 +54,7 @@ def plot_bobot(P, lots, judul=""):
     nama = [P.tickers[i] for i in idx] + ["KAS"]
     val = list(nilai[idx]) + [1.0 - nilai.sum()]
     fig, ax = plt.subplots(figsize=(6, max(2.5, 0.4 * len(nama))))
-    ax.barh(nama, val, color=["#009E73"] * len(idx) + ["#999999"])
+    ax.barh(nama, val, color=["#E69F00"] * len(idx) + ["#999999"])
     for i, v in enumerate(val):
         ax.text(v + 0.005, i, f"{v:.1%}", va="center", fontsize=8)
     ax.set(xlabel="bobot dari modal", title=judul or "Bobot portofolio")
@@ -109,7 +109,7 @@ def plot_proses(trace, P, judul):
     for ax, g in zip(axs[:3], [0, G // 2, G - 1]):
         lay = trace["viol"][g] <= 0
         ax.scatter(trace["sigma"][g][~lay], trace["R"][g][~lay], s=12, color="#999999", label="melanggar")
-        ax.scatter(trace["sigma"][g][lay], trace["R"][g][lay], s=12, color="#009E73", label="layak")
+        ax.scatter(trace["sigma"][g][lay], trace["R"][g][lay], s=12, color="#2CA02C", label="layak")
         ax.axvline(P.sigma_max, color="k", ls="--", lw=1)
         ax.set(title=f"iterasi {g}", xlabel="σ", ylabel="R"); ax.grid(alpha=0.3)
     axs[0].legend(fontsize=7)

@@ -26,7 +26,7 @@ def test_jalankan_dua_algoritma():
     at.sidebar.button[0].click()
     at.run()
     assert not at.exception
-    assert len(at.tabs) == 8
+    assert len(at.tabs) == 9
     assert len(at.metric) >= 10                          # 5 metrik x 2 algoritma
     assert any("Mann" in m.value for m in at.markdown)
 
@@ -38,7 +38,7 @@ def test_jalankan_sa():
     at.sidebar.button[0].click()
     at.run()
     assert not at.exception
-    assert len(at.tabs) == 8 and len(at.metric) >= 5
+    assert len(at.tabs) == 9 and len(at.metric) >= 5
 
 
 def test_analisis_profil_risiko():
@@ -57,3 +57,13 @@ def test_analisis_profil_risiko():
     assert "Pengaruh profil terhadap return akhir" in teks
     for profil in ("Konservatif", "Moderat", "Agresif"):
         assert profil in teks
+
+
+def test_jalankan_de_dan_hasil_de_tampil():
+    at = _app()
+    at.sidebar.multiselect[0].set_value(["DE", "GA"])
+    at.sidebar.slider[0].set_value(2)
+    at.sidebar.button[0].click()
+    at.run()
+    assert not at.exception
+    assert any("Differential Evolution" in h.value for h in at.subheader)

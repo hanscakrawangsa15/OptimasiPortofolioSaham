@@ -18,6 +18,7 @@ SA_PARAM = {
     "sigma_mut": 0.10,
     "calibration_samples": 30,
     "target_acceptance": 0.80,
+    "n_seed": None,
 }
 
 
@@ -214,7 +215,8 @@ def run(P, budget=config.BUDGET_EVAL, seed=0, trace=False, **kw):
     ev = Evaluator(P, budget)
     start_time = time.perf_counter()
 
-    x = init_population(P, rng, 1, n_seed=1)[0]
+    n_seed = config.n_semai(1) if prm["n_seed"] is None else prm["n_seed"]
+    x = init_population(P, rng, 1, n_seed=n_seed)[0]
     R, sigma, viol = ev.evaluate(x)
 
     R_cur = float(R[0])

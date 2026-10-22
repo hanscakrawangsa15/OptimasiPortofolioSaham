@@ -4,20 +4,48 @@ from scipy.stats import mannwhitneyu
 
 from algorithms import ga, pso, sa, de
 from fitness import deb_better
+from parameter import kw_terpilih
 
+def _ga(P, seed, trace, kw):
+    return ga.run(P, seed=seed, trace=trace, **kw)
+
+
+def _pso(P, seed, trace, kw):
+    return pso.run(P, seed=seed, trace=trace, **kw)
+
+
+def _sa(P, seed, trace, kw):
+    return sa.run(P, seed=seed, trace=trace, **kw)
+
+
+def _de(P, seed, trace, kw):
+    return de.run(P, seed=seed, trace=trace, **kw)
+
+
+_JALAN = {"GA": _ga, "PSO": _pso, "SA": _sa, "DE": _de}
+
+# Setiap algoritma punya dua varian: parameter awal (PDF) dan parameter terpilih (beku dari Fase 1).
+# Nama tanpa akhiran ("GA", "SA", "DE") = parameter awal, sama seperti "PSO awal".
 METODE = {
-    "DE": lambda P, seed, trace: de.run(P, seed=seed, trace=trace),
-    "GA": lambda P, seed, trace: ga.run(P, seed=seed, trace=trace),
-    "PSO awal": lambda P, seed, trace: pso.run(
-        P, seed=seed, trace=trace, **pso.PSO_AWAL
-    ),
-    "PSO terpilih": lambda P, seed, trace: pso.run(
-        P, seed=seed, trace=trace, **pso.PSO_TERPILIH
-    ),
-    "SA": lambda P, seed, trace: sa.run(
-        P, seed=seed, trace=trace
-    ),
+    "GA": lambda P, seed, trace: _ga(P, seed, trace, {}),
+    "GA awal": lambda P, seed, trace: _ga(P, seed, trace, {}),
+    "GA terpilih": lambda P, seed, trace: _ga(P, seed, trace, kw_terpilih("GA")),
+    "PSO awal": lambda P, seed, trace: _pso(P, seed, trace, pso.PSO_AWAL),
+    "PSO terpilih": lambda P, seed, trace: _pso(P, seed, trace, kw_terpilih("PSO") or pso.PSO_TERPILIH),
+    "SA": lambda P, seed, trace: _sa(P, seed, trace, {}),
+    "SA awal": lambda P, seed, trace: _sa(P, seed, trace, {}),
+    "SA terpilih": lambda P, seed, trace: _sa(P, seed, trace, kw_terpilih("SA")),
+    "DE": lambda P, seed, trace: _de(P, seed, trace, {}),
+    "DE awal": lambda P, seed, trace: _de(P, seed, trace, {}),
+    "DE terpilih": lambda P, seed, trace: _de(P, seed, trace, kw_terpilih("DE")),
 }
+
+
+def nama_metode(algoritma, terpilih):
+    """Nama kunci METODE untuk algoritma dasar (GA/PSO/SA/DE) dan varian parameternya."""
+    if terpilih:
+        return f"{algoritma} terpilih"
+    return "PSO awal" if algoritma == "PSO" else algoritma
 
 
 # Profil risiko investor -> pengali batas risiko (sigma_max = pengali x volatilitas portofolio 1/N)
