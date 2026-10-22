@@ -20,6 +20,10 @@ METODE = {
 }
 
 
+# Profil risiko investor -> pengali batas risiko (sigma_max = pengali x volatilitas portofolio 1/N)
+PROFIL_RISIKO = {"Konservatif": 1.5, "Moderat": 2.0, "Agresif": 2.5}
+
+
 def jalankan(metode, P, seeds, trace=False):
     if metode not in METODE:
         raise ValueError(f"metode tidak dikenal: {metode}")
@@ -56,3 +60,28 @@ def bandingkan(a, b, alpha=0.05):
     if p >= alpha:
         return dict(p=p, lebih_baik="tidak berbeda nyata")
     return dict(p=p, lebih_baik="A" if np.median(Ra) > np.median(Rb) else "B")
+
+
+def konvergensi(runs, fraksi=(0.9, 0.99)):
+    """Kurva konvergensi antar seed (median dan kuartil R terbaik yang layak) dan titik capai.
+
+    capai_X = evaluasi pertama saat median mencapai R_awal + X (R_akhir - R_awal), dengan R_awal = nilai median
+    pertama yang terdefinisi (minimal separuh run sudah layak). layak_pertama = evaluasi saat titik itu muncul.
+    """
+    x = np.array([h[0] for h in runs[0].history])
+    Y = np.array([[h[1] for h in r.history] for r in runs], float)
+    ada = (~np.isnan(Y)).mean(axis=0) >= 0.5
+    med, q1, q3 = (np.where(ada, np.nanpercentile(np.where(np.isnan(Y), np.nan, Y), q, axis=0), np.nan)
+                   if ada.any() else np.full(len(x), np.nan) for q in (50, 25, 75))
+    hasil = dict(evaluasi=x, median=med, q1=q1, q3=q3)
+    if not ada.any():
+        return {**hasil, "R_awal": np.nan, "R_akhir": np.nan, "layak_pertama": np.nan,
+                "capai_90": np.nan, "capai_99": np.nan}
+    i0 = int(np.argmax(ada))
+    R0, R1 = float(med[i0]), float(med[-1])
+    hasil.update(R_awal=R0, R_akhir=R1, layak_pertama=int(x[i0]))
+    for f in fraksi:
+        ambang = R0 + f * (R1 - R0)
+        idx = np.where(ada & (med >= ambang - 1e-12))[0]
+        hasil[f"capai_{int(round(f * 100))}"] = int(x[idx[0]])
+    return hasil

@@ -89,7 +89,13 @@ def test_jalankan_dan_terbaik():
     runs2 = runner.jalankan("PSO terpilih", P, seeds=[0, 1])
     assert len(runs2) == 2 and all(r.n_eval == config.BUDGET_EVAL for r in runs2)
     with pytest.raises(ValueError):
-        runner.jalankan("SA", P, seeds=[0])
+        runner.jalankan("XYZ", P, seeds=[0])
+
+
+def test_sa_terdaftar_di_runner():
+    P = _P(5)
+    runs = runner.jalankan("SA", P, seeds=[0, 1])
+    assert len(runs) == 2 and all(r.n_eval == config.BUDGET_EVAL and r.feasible for r in runs)
 
 
 def test_ringkas_dan_bandingkan():
@@ -101,3 +107,31 @@ def test_ringkas_dan_bandingkan():
     assert 0 <= ring["sukses"] <= 1 and ring["layak"] == 1.0
     cmp_ = runner.bandingkan(a, b)
     assert 0 <= cmp_["p"] <= 1 and cmp_["lebih_baik"] in ("A", "B", "tidak berbeda nyata")
+
+
+# ------------------------------------------------------------------ profil risiko
+def test_profil_risiko_memetakan_ke_pengali_sigma():
+    assert runner.PROFIL_RISIKO == {"Konservatif": 1.5, "Moderat": 2.0, "Agresif": 2.5}
+    assert set(runner.PROFIL_RISIKO.values()) <= set(config.SIGMA_MULT)
+
+
+def test_konvergensi_kurva_dan_titik_capai():
+    P = _P(5)
+    runs = runner.jalankan("GA", P, seeds=range(4))
+    k = runner.konvergensi(runs)
+    n = config.BUDGET_EVAL // config.HISTORY_STEP
+    assert len(k["evaluasi"]) == len(k["median"]) == len(k["q1"]) == len(k["q3"]) == n
+    assert k["evaluasi"][0] == config.HISTORY_STEP and k["evaluasi"][-1] == config.BUDGET_EVAL
+    med = k["median"][~np.isnan(k["median"])]
+    assert (np.diff(med) >= -1e-12).all()                         # R terbaik tidak pernah turun
+    assert k["R_akhir"] == pytest.approx(k["median"][-1])
+    assert k["capai_90"] <= k["capai_99"] <= config.BUDGET_EVAL   # 90% tercapai lebih dulu dari 99%
+    assert k["layak_pertama"] <= k["capai_90"]
+
+
+def test_konvergensi_profil_lebih_longgar_return_tidak_turun():
+    hasil = {}
+    for nama, mult in runner.PROFIL_RISIKO.items():
+        P = buat_problem(muat_jendela("kasus_tetap"), 5, mult=mult)
+        hasil[nama] = runner.konvergensi(runner.jalankan("GA", P, seeds=range(3)))["R_akhir"]
+    assert hasil["Agresif"] >= hasil["Konservatif"] - 1e-9

@@ -5,11 +5,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-WARNA = {"GA": "#0072B2", "PSO": "#D55E00"}
+WARNA = {"GA": "#0072B2", "PSO": "#D55E00", "SA": "#CC79A7"}
 
 
 def warna(metode):
-    return WARNA["GA"] if metode.startswith("GA") else WARNA["PSO"]
+    return WARNA.get(metode.split()[0], "#666666")
 
 
 def _riwayat(runs):
@@ -79,6 +79,29 @@ def plot_box(hasil, R_opt=None):
     return fig
 
 
+def plot_konvergensi_profil(kurva, sigma_max):
+    """Kurva konvergensi per profil risiko (satu panel tiap profil): median dan rentang kuartil tiap metode.
+
+    kurva = {profil: {metode: hasil runner.konvergensi}}; sigma_max = {profil: batas risiko}.
+    """
+    profil = list(kurva)
+    fig, axs = plt.subplots(1, len(profil), figsize=(5 * len(profil), 3.8), sharex=True)
+    axs = np.atleast_1d(axs)
+    for ax, p in zip(axs, profil):
+        for m, k in kurva[p].items():
+            ax.plot(k["evaluasi"], k["median"], color=warna(m), label=m)
+            ax.fill_between(k["evaluasi"], k["q1"], k["q3"], color=warna(m), alpha=0.2)
+            if not np.isnan(k["capai_99"]):
+                ax.axvline(k["capai_99"], color=warna(m), ls=":", lw=1)
+        ax.set(title=f"{p} (σ_max = {sigma_max[p]:.3f})", xlabel="jumlah evaluasi")
+        ax.grid(alpha=0.3)
+    axs[0].set_ylabel("R terbaik yang layak")
+    axs[0].legend(fontsize=8)
+    fig.suptitle("Konvergensi menurut profil risiko (garis putus-putus: 99% perbaikan tercapai)", fontsize=10)
+    fig.tight_layout()
+    return fig
+
+
 def plot_proses(trace, P, judul):
     """Proses satu run: sebaran populasi (risiko-return) pada awal, tengah, akhir, plus R terbaik per iterasi."""
     G = len(trace["R"])
@@ -99,11 +122,31 @@ def plot_proses(trace, P, judul):
     return fig
 
 
+def plot_proses_sa(trace, P, judul):
+    """Proses satu run SA: lintasan solusi saat ini (risiko-return), R saat ini, dan jadwal temperatur."""
+    R = np.asarray(trace["R"]).ravel()
+    sg = np.asarray(trace["sigma"]).ravel()
+    T = np.asarray(trace["temperature"]).ravel()
+    langkah = np.arange(len(R))
+    fig, axs = plt.subplots(1, 3, figsize=(14, 3.4))
+    sc = axs[0].scatter(sg, R, c=langkah, cmap="viridis", s=4)
+    axs[0].axvline(P.sigma_max, color="k", ls="--", lw=1)
+    axs[0].set(title="lintasan solusi saat ini", xlabel="σ", ylabel="R"); axs[0].grid(alpha=0.3)
+    fig.colorbar(sc, ax=axs[0], label="langkah")
+    axs[1].plot(langkah, R, color=WARNA["SA"], lw=0.6)
+    axs[1].set(title="R solusi saat ini", xlabel="langkah"); axs[1].grid(alpha=0.3)
+    axs[2].semilogy(langkah, T, color="#444444")
+    axs[2].set(title="jadwal temperatur", xlabel="langkah"); axs[2].grid(alpha=0.3)
+    fig.suptitle(judul)
+    fig.tight_layout()
+    return fig
+
+
 def plot_uji(nilai, D):
     """Nilai portofolio harian pada data uji."""
     fig, ax = plt.subplots(figsize=(7, 4))
     for nama, v in nilai.items():
-        if nama.startswith("GA") or nama.startswith("PSO"):
+        if nama.split()[0] in WARNA:
             ax.plot(v, color=warna(nama), label=nama)
         else:
             ax.plot(v, color="#666666", ls="--" if "1/N" in nama else ":", label=nama)

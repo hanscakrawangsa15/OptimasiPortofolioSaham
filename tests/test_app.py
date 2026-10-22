@@ -26,6 +26,34 @@ def test_jalankan_dua_algoritma():
     at.sidebar.button[0].click()
     at.run()
     assert not at.exception
-    assert len(at.tabs) == 7
+    assert len(at.tabs) == 8
     assert len(at.metric) >= 10                          # 5 metrik x 2 algoritma
     assert any("Mann" in m.value for m in at.markdown)
+
+
+def test_jalankan_sa():
+    at = _app()
+    at.sidebar.multiselect[0].set_value(["SA"])
+    at.sidebar.slider[0].set_value(2)
+    at.sidebar.button[0].click()
+    at.run()
+    assert not at.exception
+    assert len(at.tabs) == 8 and len(at.metric) >= 5
+
+
+def test_analisis_profil_risiko():
+    at = _app()
+    at.sidebar.selectbox[1].select(3)
+    at.sidebar.multiselect[0].set_value(["GA", "PSO"])
+    at.sidebar.slider[0].set_value(2)
+    at.sidebar.button[0].click()
+    at.run()
+    assert not at.exception
+    tombol = next(b for b in at.button if b.label == "Hitung analisis profil risiko")
+    tombol.click()
+    at.run()
+    assert not at.exception
+    teks = " ".join(m.value for m in at.markdown)
+    assert "Pengaruh profil terhadap return akhir" in teks
+    for profil in ("Konservatif", "Moderat", "Agresif"):
+        assert profil in teks
