@@ -55,6 +55,8 @@ python3 src/penalaan.py      # Fase 1: tala tiap algoritma (jendela 1, K=7, 30 r
 python3 src/eksperimen.py    # Fase 2: 4 algoritma x 30 masalah x 30 seed = 3.600 run -> hasil/csv/fase2_hasil.csv
 ```
 
+- **Bahan Bab 4**: `python3 src/laporan.py` membuat tabel (`hasil/tabel/`), gambar (`hasil/gambar/`), dan `docs/hasil_bab4.md`
+  menurut outline laporan, dari hasil Fase 1 dan Fase 2 (ditambah percobaan kecil untuk profil risiko dan ablasi operator GA).
 - **Fase 1** (penalaan): GA populasi × laju mutasi, SA peluang penerimaan awal (T₀) × laju pendinginan, PSO w × c lalu v_max,
   DE F × CR. Grid diperluas satu kali bila nilai terbaik berada di tepi. Seed penalaan 100–129, terpisah dari seed Fase 2.
 - **Fase 2** (perbandingan): 30 masalah (5 jendela walk-forward + kasus tetap, masing-masing 5 nilai K), seed 0–29 sama untuk
@@ -81,6 +83,7 @@ python3 src/eksperimen.py    # Fase 2: 4 algoritma x 30 masalah x 30 seed = 3.60
 │   ├── eksperimen.py          Fase 2: semua algoritma x 30 masalah x 30 seed
 │   ├── parameter.py           Pembaca parameter beku Fase 1
 │   ├── stats.py               Peringkat, Wilcoxon berpasangan + Holm, ringkasan latih
+│   ├── laporan.py             Tabel dan gambar Bab 4 laporan
 │   ├── visualisasi.py         Grafik untuk GUI
 │   └── algorithms/
 │       ├── ga.py  pso.py  sa.py  de.py     Empat metaheuristik: run(problem, budget, seed, trace, **parameter)
@@ -99,9 +102,11 @@ python3 src/eksperimen.py    # Fase 2: 4 algoritma x 30 masalah x 30 seed = 3.60
 ├── hasil/
 │   ├── csv/                   Keluaran eksperimen: fase1_*.csv, fase1_parameter_beku.json, fase2_hasil.csv, de_*.csv, pso_*.csv
 │   ├── hasil_sa_30_seed.csv   Hasil notebook SA
-│   └── gambar/                Visual untuk laporan
+│   ├── tabel/                 Tabel Bab 4 (CSV)
+│   └── gambar/                Gambar Bab 4 (PNG)
 └── docs/
     ├── rujukan/               PDF rencana dan makalah sumber
+    ├── hasil_bab4.md          Tabel dan gambar Bab 4 siap pakai (dibuat src/laporan.py)
     └── revisi_bab3_laporan.md Catatan penyesuaian Bab 3 laporan terhadap hasil eksperimen
 ```
 

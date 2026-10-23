@@ -53,6 +53,7 @@ def _satu_run(argumen):
                 kas=float((P.D - pos.sum()) / P.D), g0=float(np.clip(r.x[-1], 0.0, 1.0)),
                 lots=";".join(map(str, r.lots)),
                 return_uji_total=m["total"], return_uji_tahunan=m["setara_tahun"], vol_uji=m["vol"], mdd_uji=m["mdd"],
+                sharpe_uji=m["sharpe"], cvar95_uji=m["cvar95"], shrinkage=m["setara_tahun"] - r.R,
                 nilai_akhir_uji=float(nilai[-1]), saham_akhir_uji=saham_akhir, kas_akhir_uji=kas_akhir,
                 risiko_uji_memenuhi=bool(m["vol"] <= P.sigma_max))
 

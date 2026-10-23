@@ -135,3 +135,19 @@ def test_konvergensi_profil_lebih_longgar_return_tidak_turun():
         P = buat_problem(muat_jendela("kasus_tetap"), 5, mult=mult)
         hasil[nama] = runner.konvergensi(runner.jalankan("GA", P, seeds=range(3)))["R_akhir"]
     assert hasil["Agresif"] >= hasil["Konservatif"] - 1e-9
+
+
+def test_metrik_uji_sharpe_cvar_dan_kas_saja():
+    r_uji = muat_jendela("kasus_tetap")["return_uji"]
+    P = _P(5)
+    r = ga.run(P, seed=3)
+    V = nilai_uji(P, r.lots, r_uji)
+    m = metrik_uji(V, P.D)
+    assert m["sharpe"] == pytest.approx((m["setara_tahun"] - P.rf) / m["vol"])
+    awal = np.concatenate([[P.D], V])
+    harian = np.diff(awal) / awal[:-1]
+    n_ekor = max(1, int(np.ceil(0.05 * len(harian))))
+    assert m["cvar95"] == pytest.approx(np.sort(harian)[:n_ekor].mean())     # rata-rata 5% hari terburuk (return harian)
+    assert m["cvar95"] <= np.percentile(harian, 5) + 1e-12
+    kas = metrik_uji(nilai_kas(P.D, P.rf, len(r_uji)), P.D)
+    assert np.isnan(kas["sharpe"])                                          # tanpa volatilitas: Sharpe tak terdefinisi

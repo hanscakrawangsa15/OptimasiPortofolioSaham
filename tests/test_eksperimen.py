@@ -70,3 +70,31 @@ def test_fase2_tidak_melampaui_optimum_k2():
     for d in ("kasus_tetap", "jendela_3", "jendela_5"):
         r_star = brute_force_k2(buat_problem(muat_jendela(d), 2))["kas bebas"][0]
         assert df[(df.data == d) & (df.K == 2)]["R"].max() <= r_star + 1e-9
+
+
+def test_kolom_metrik_tambahan_dan_shrinkage():
+    r = eksperimen._satu_run(("GA", "jendela_3", 5, 4, 2000, {}))
+    for kolom in ("sharpe_uji", "cvar95_uji", "shrinkage"):
+        assert kolom in r
+    assert r["shrinkage"] == pytest.approx(r["return_uji_tahunan"] - r["R"])
+
+
+def _df_latih():
+    baris = []
+    for a, rs in {"GA": [0.30, 0.29, 0.30, 0.20], "DE": [0.30, 0.30, 0.30, 0.30]}.items():
+        for s, R in enumerate(rs):
+            baris.append(dict(algoritma=a, data="d", K=2, seed=s, R=R, layak=True, eval_terbaik=100 * (s + 1), detik=1.0))
+    return pd.DataFrame(baris)
+
+
+def test_acuan_dan_ringkasan_latih():
+    df = _df_latih()
+    ac = stats.acuan_masalah(df, brute=False)
+    assert ac.loc[("d", 2)] == pytest.approx(0.30)                          # terbaik yang diketahui
+    ac2 = stats.acuan_masalah(df, brute=False, brute_force={("d", 2): 0.31})
+    assert ac2.loc[("d", 2)] == pytest.approx(0.31)                         # optimum brute force menggantikan
+    r = stats.ringkasan_latih(df, ac).set_index("algoritma")
+    assert r.loc["DE", "sukses"] == 1.0 and r.loc["DE", "selisih"] == pytest.approx(0.0)
+    assert r.loc["GA", "sukses"] == pytest.approx(0.5)                      # ambang 0,297: hanya 0,30 dan 0,30 yang lolos
+    assert r.loc["GA", "median"] == pytest.approx(0.295) and r.loc["GA", "layak"] == 1.0
+    assert {"mean", "std", "min", "max", "eval_terbaik", "detik"} <= set(r.columns)

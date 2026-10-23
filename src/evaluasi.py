@@ -1,6 +1,8 @@
 """Evaluasi satu portofolio: rincian kas, penguraian return/risiko, dan uji pada data uji."""
 import numpy as np
 
+import config
+
 from decoder import bobot_target, decode_batch
 
 
@@ -54,14 +56,19 @@ def nilai_uji(P, lots, r_uji):
     return saham + (P.D - pos.sum()) * (1.0 + P.rf) ** (np.arange(1, len(r_uji) + 1) / 252)
 
 
-def metrik_uji(nilai, D):
+def metrik_uji(nilai, D, rf=config.RISK_FREE):
+    """Metrik data uji. sharpe = (return setara tahun - rf) / volatilitas; cvar95 = rata-rata 5% return harian terburuk."""
     T = len(nilai)
     awal = np.concatenate([[D], nilai])
     harian = np.diff(awal) / awal[:-1]
     total = nilai[-1] / D - 1
     puncak = np.maximum.accumulate(awal)[1:]
-    return dict(total=total, setara_tahun=total * 252 / T, vol=harian.std(ddof=1) * np.sqrt(252),
-                mdd=float((nilai / puncak - 1).min()))
+    vol = harian.std(ddof=1) * np.sqrt(252)
+    setara = total * 252 / T
+    n_ekor = max(1, int(np.ceil(0.05 * len(harian))))
+    return dict(total=total, setara_tahun=setara, vol=vol, mdd=float((nilai / puncak - 1).min()),
+                sharpe=float((setara - rf) / vol) if vol > 1e-9 else float("nan"),
+                cvar95=float(np.sort(harian)[:n_ekor].mean()))
 
 
 def komponen_akhir(P, lots, r_uji):

@@ -31,3 +31,31 @@ def wilcoxon_holm(tabel, alpha=0.05):
     hasil["p_holm"] = holm
     hasil["signifikan"] = hasil["p_holm"] < alpha
     return hasil
+
+
+def acuan_masalah(df, brute=True, brute_force=None):
+    """R acuan per (data, K): optimum brute force untuk K = 2; selain itu R terbaik yang pernah ditemukan semua run."""
+    ac = df.groupby(["data", "K"])["R"].max()
+    if brute_force is None and brute:
+        from algorithms.brute_force_k2 import brute_force_k2
+        from data import buat_problem, muat_jendela
+        brute_force = {(d, 2): brute_force_k2(buat_problem(muat_jendela(d), 2))["kas bebas"][0]
+                       for d in df.loc[df["K"] == 2, "data"].unique()}
+    for kunci, nilai in (brute_force or {}).items():
+        if kunci in ac.index:
+            ac.loc[kunci] = nilai
+    return ac
+
+
+def ringkasan_latih(df, acuan, toleransi=0.01):
+    """Metrik data latih per (data, K, algoritma): R (mean, median, std, min, max), kelayakan, selisih ke R acuan,
+    tingkat keberhasilan (R >= (1 - toleransi) x R acuan), evaluasi hingga terbaik dan waktu (median)."""
+    d = df.assign(Reff=df["R"].where(df["layak"], -1.0))
+    d["acuan"] = [acuan.loc[(a, b)] for a, b in zip(d["data"], d["K"])]
+    d["ok"] = d["layak"] & (d["R"] >= (1.0 - toleransi) * d["acuan"])
+    g = d.groupby(["data", "K", "algoritma"])
+    hasil = g.agg(mean=("Reff", "mean"), median=("Reff", "median"), std=("Reff", "std"), min=("Reff", "min"),
+                  max=("Reff", "max"), layak=("layak", "mean"), acuan=("acuan", "first"), sukses=("ok", "mean"),
+                  eval_terbaik=("eval_terbaik", "median"), detik=("detik", "median")).reset_index()
+    hasil["selisih"] = hasil["acuan"] - hasil["median"]
+    return hasil
