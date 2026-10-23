@@ -223,6 +223,35 @@ def tabel_lintas_kinerja(df, data=DATA_UTAMA, rf=config.RISK_FREE):
     return pd.DataFrame(baris)
 
 
+def tabel_metrik_latih(df, data=DATA_UTAMA):
+    """Metrik data latih lengkap (Tabel 3.14): R, kelayakan, selisih ke R acuan, keberhasilan, evaluasi, waktu."""
+    d = df[df.data == data]
+    r = stats.ringkasan_latih(d, stats.acuan_masalah(d))
+    out = pd.DataFrame({"K": r["K"], "Algoritma": r["algoritma"], "Mean R (%)": 100 * r["mean"],
+                        "Median R (%)": 100 * r["median"], "Std (pp)": 100 * r["std"], "Min R (%)": 100 * r["min"],
+                        "Maks R (%)": 100 * r["max"], "Kelayakan (%)": 100 * r["layak"],
+                        "Selisih ke R acuan (pp)": 100 * r["selisih"],
+                        "Keberhasilan gap <= 1% (%)": 100 * r["sukses"],
+                        "Median evaluasi hingga terbaik": r["eval_terbaik"], "Median waktu (dtk)": r["detik"]})
+    out["_u"] = out["Algoritma"].map({a: i for i, a in enumerate(ALGO)})
+    return out.sort_values(["K", "_u"]).drop(columns="_u").reset_index(drop=True)
+
+
+def tabel_metrik_uji(df, data=DATA_UTAMA):
+    """Metrik data uji lengkap (Tabel 3.14): median antar 30 run per algoritma dan K."""
+    d = df[df.data == data]
+    g = d.groupby(["K", "algoritma"]).agg(
+        **{"Return uji (%/tahun)": ("return_uji_tahunan", lambda s: 100 * s.median()),
+           "Volatilitas uji (%)": ("vol_uji", lambda s: 100 * s.median()), "Sharpe uji": ("sharpe_uji", "median"),
+           "CVaR 95% harian (%)": ("cvar95_uji", lambda s: 100 * s.median()),
+           "Max drawdown (%)": ("mdd_uji", lambda s: 100 * s.median()),
+           "Shrinkage (pp)": ("shrinkage", lambda s: 100 * s.median()),
+           "Volatilitas uji <= sigma_max (%)": ("risiko_uji_memenuhi", lambda s: 100 * s.mean())}).reset_index()
+    g = g.rename(columns={"algoritma": "Algoritma"})
+    g["_u"] = g["Algoritma"].map({a: i for i, a in enumerate(ALGO)})
+    return g.sort_values(["K", "_u"]).drop(columns="_u").reset_index(drop=True)
+
+
 def tabel_lintas_komputasi(df):
     ac = stats.acuan_masalah(df)
     rg = stats.ringkasan_latih(df, ac)
@@ -620,6 +649,9 @@ def bangun(proses=None, paksa=False, cetak=print):
     # 4.6
     lk = tabel_lintas_kinerja(df)
     lc = tabel_lintas_komputasi(df)
+    ml, mu = tabel_metrik_latih(df), tabel_metrik_uji(df)
+    _simpan_tabel(ml, "4_6_1a_metrik_latih")
+    _simpan_tabel(mu, "4_6_1b_metrik_uji")
     w = stats.wilcoxon_holm(stats.median_per_masalah(df))
     _simpan_tabel(lk, "4_6_1_lintas_kinerja")
     _simpan_tabel(lc, "4_6_2_lintas_komputasi")
@@ -631,6 +663,8 @@ def bangun(proses=None, paksa=False, cetak=print):
             "Tabel 4.6.1 Expected return, risiko, dan Sharpe ratio portofolio terbaik per algoritma (kasus tetap)", "",
             _md(lk, {"K": str}, nd=2), "",
             "Sharpe latih = (R - r_f) / sigma; Sharpe uji = (return setara tahunan uji - r_f) / volatilitas uji.", "",
+            "Tabel 4.6.1a Metrik data latih lengkap (kasus tetap, 30 seed per sel)", "", _md(ml, {"K": str}), "",
+            "Tabel 4.6.1b Metrik data uji lengkap (median 30 run per sel; kasus tetap)", "", _md(mu, {"K": str}), "",
             "![Gambar 4.6.1](../hasil/gambar/lintas_boxplot.png)", "Gambar 4.6.1 Sebaran expected return empat algoritma pada setiap K", "",
             "![Gambar 4.6.2](../hasil/gambar/lintas_uji.png)", "Gambar 4.6.2 Return dan Sharpe uji pada 30 masalah", "",
             "### 4.6.2 Perbandingan kecepatan komputasi dan stabilitas konvergensi", "",

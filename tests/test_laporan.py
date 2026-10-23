@@ -56,3 +56,14 @@ def test_sebar_label_tidak_bertumpuk_dan_urutan_terjaga():
     assert (np.diff(baru[urut]) >= 0.085 - 1e-9).all()               # jarak minimal antar label
     assert baru[np.argmax(y)] >= baru[np.argmin(y)]
     assert np.mean(baru) == pytest.approx(np.mean(y))                # kelompok label tetap berpusat di data
+
+
+def test_tabel_metrik_lengkap_sesuai_tabel_3_14(df_kecil):
+    d = df_kecil.assign(data="kasus_tetap", K=7)           # satu sel (K=7) agar tabel lengkap dapat diperiksa
+    lat = laporan.tabel_metrik_latih(d)
+    assert {"Mean R (%)", "Median R (%)", "Std (pp)", "Min R (%)", "Maks R (%)", "Kelayakan (%)",
+            "Selisih ke R acuan (pp)", "Keberhasilan gap <= 1% (%)", "Median evaluasi hingga terbaik", "Median waktu (dtk)"} <= set(lat.columns)
+    uji = laporan.tabel_metrik_uji(d)
+    assert {"Return uji (%/tahun)", "Volatilitas uji (%)", "Sharpe uji", "CVaR 95% harian (%)", "Max drawdown (%)",
+            "Shrinkage (pp)", "Volatilitas uji <= sigma_max (%)"} <= set(uji.columns)
+    assert len(lat) == len(uji) == len(eksperimen.ALGORITMA)
